@@ -1,0 +1,2283 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jorsell — DigiMarket | V3 Realtime Chat + Finance Page</title>
+  <meta name="description" content="Jorsell - Marketplace Produk Digital (Supabase Powered SPA) - with improved profile, my shop, affiliate, withdraw, review & product detail features" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --brand:#5D3A9B;
+      --brand-2:#6F47B0;
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --text:#1f2937;
+      --radius:12px;
+      --shadow:0 6px 14px rgba(15,23,42,0.06);
+      --balance-color: #ADFFB9;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-family:Inter,system-ui,Arial}
+    .app{max-width:420px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative}
+    
+    /* === PERUBAHAN HEADER MODERN DIMULAI === */
+    header.app-header{
+      background:linear-gradient(180deg,var(--brand),var(--brand-2));
+      color:white;
+      padding:12px 14px; /* Padding bottom dikurangi */
+      border-bottom-left-radius:18px;
+      border-bottom-right-radius:18px;
+    }
+    .header-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px; /* Menambah jarak antar elemen header */
+    }
+    .logo{display:flex;align-items:center;gap:0;font-weight:700; flex-shrink: 0;} /* Gap 0, flex-shrink 0 agar logo tidak mengecil */
+    .logo .badge{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12)}
+    
+    .search-row{ /* Dihapus dari HTML, tapi style mungkin masih relevan jika digunakan di tempat lain */
+      display:flex;
+      gap:8px;
+      /* margin-top:10px; <-- Dihapus */
+    }
+    .search{
+      flex: 1; /* Mengisi ruang */
+      display:flex;
+      align-items:center;
+      background:rgba(255,255,255,0.15); /* Sedikit lebih terang */
+      padding: 8px 12px; /* Disesuaikan */
+      border-radius: 20px; /* Lebih modern (bulat) */
+      margin: 0 5px; /* Memberi jarak dari logo dan ikon */
+    }
+    .search input{border:0;background:transparent;outline:none;color:#ffffff;width:100%;}
+    .search input::placeholder { color: rgba(255,255,255,0.7); opacity: 1; } /* Placeholder lebih terlihat */
+    
+    .icon-btn{
+      width:40px;
+      height:40px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:white;
+      cursor:pointer;
+      flex-shrink: 0; /* Agar ikon tidak mengecil */
+    }
+    .icon-btn svg { /* Style untuk SVG ikon profesional */
+        display: block;
+        fill: white;
+        width: 20px;
+        height: 20px;
+    }
+    /* === PERUBAHAN HEADER MODERN SELESAI === */
+
+    main{padding:12px;padding-bottom:100px;flex:1}
+    .card{background:var(--card);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);margin-bottom:12px}
+    .carousel{height:140px;border-radius:12px;overflow:hidden;position:relative}
+    .carousel img{Width:100%;height:100%;object-fit:cover;display:block}
+    .carousel .dots{position:absolute;left:12px;bottom:8px;display:flex;gap:6px}
+    .dot{width:8px;height:8px;border-radius:8px;background:rgba(255,255,255,0.6)}
+    .dot.active{background:white}
+    .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+    .cat{background:white;border-radius:10px;padding:8px;text-align:center;font-size:12px;box-shadow:0 4px 10px rgba(15,23,42,0.04);cursor:pointer}
+    .cat img{width:36px;height:36px;margin:0 auto;border-radius:8px;background:linear-gradient(180deg,#fbf5ff,#f7f0ff);display:block}
+    .products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+    .product{background:var(--card);border-radius:12px;padding:8px;cursor:pointer;display:flex;flex-direction:column;box-shadow:0 2px 5px rgba(15,23,42,0.04)}
+    .p-thumb{height:110px;border-radius:10px;background:linear-gradient(180deg,#f8f4ff,#fff);overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:8px}
+    .p-thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+    .p-title{font-size:14px;font-weight:700}
+    .p-meta{font-size:12px;color:var(--muted);margin-top:6px}
+    .p-actions{display:flex;gap:8px;margin-top:auto}
+    .btn{flex:1;background:var(--brand);color:white;border:0;padding:8px;border-radius:10px;cursor:pointer;transition:opacity 0.1s}
+    .btn:hover{opacity:0.9}
+    .btn-outline{flex:1;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:10px;background:transparent;cursor:pointer;transition:background 0.1s}
+    .btn-outline:hover{background:var(--bg)}
+    .page{display:none}
+    .page.active{display:block}
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:420px;max-width:96%;height:72px;background:white;border-radius:16px;display:flex;align-items:center;justify-content:space-around;box-shadow:0 10px 30px rgba(15,23,42,0.12);z-index:999}
+    .nav-item{flex:1;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .nav-item.active{color:var(--brand);font-weight:700}
+    .profile-row{display:flex;gap:12px;align-items:center}
+    .avatar{width:64px;height:64px;border-radius:14px;background:linear-gradient(180deg,var(--brand),var(--brand-2));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;overflow:hidden;}
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    @media(min-width:900px){ .app{margin-top:18px;border-radius:18px;box-shadow:0 12px 40px rgba(15,23,42,0.08);overflow:hidden} .bottom-nav{width:420px} }
+    .small{font-size:13px;color:var(--muted)}
+    input,textarea,select{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);width:100%;outline:none;}
+    input:focus,textarea:focus,select:focus{border-color:var(--brand)}
+    .hidden{display:none}
+    .muted-note{font-size:13px;color:var(--muted);margin-top:8px}
+    .link-box{display:flex;gap:8px;margin-top:8px}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;background:#111;color:white;padding:8px 12px;border-radius:8px;opacity:0.95;z-index:9999;font-size:14px}
+    .product-detail-info h2{margin-top:0}
+    .product-detail-info .price{font-size:24px;font-weight:700;color:var(--brand);margin-top:8px}
+    .product-detail-info .rating{font-size:16px;color:#ffc107;margin-top:4px}
+    .review-list-item{border-top:1px solid rgba(0,0,0,0.05);padding-top:8px;margin-top:8px}
+    .star-rating input{display:none}
+    .star-rating label{font-size:24px;color:#ccc;cursor:pointer}
+    .star-rating input:checked ~ label{color:#ffc107}
+    .star-rating{display:inline-flex;flex-direction:row-reverse}
+    .star-rating label:hover,.star-rating label:hover ~ label{color:#ffdb58}
+    
+    /* === PROFILE & MY SHOP STYLES (V2) === */
+    .profile-v2-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px;
+        background: var(--brand); 
+        color: white;
+        border-radius: 12px;
+    }
+    .profile-v2-header .avatar {
+        width: 60px;
+        height: 60px;
+        border: 3px solid white; 
+        border-radius: 50%; 
+        min-width: 60px;
+    }
+    .profile-v2-header .avatar img {
+        border-radius: 50%;
+    }
+    .profile-balance-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+    #profile-balance {
+        font-weight: 900;
+        font-size: 18px;
+        color: var(--balance-color); /* Warna baru */
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    /* Style untuk Ikon SVG Saldo Baru */
+    #btn-toggle-balance {
+        cursor: pointer;
+        opacity: 0.8;
+        padding: 4px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .balance-icon-svg {
+        width: 20px;
+        height: 20px;
+        fill: white;
+        opacity: 0.9;
+    }
+    
+    .profile-menu-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .profile-menu-item {
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.06);
+        background: var(--card);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        cursor: pointer;
+        transition: background 0.1s;
+    }
+    .profile-menu-item:hover {
+        background: var(--bg);
+    }
+
+    .shop-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .stat-box {
+        background: linear-gradient(135deg, #eef1f9, #ffffff);
+        padding: 12px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(15,23,42,0.04);
+    }
+    .stat-box .number {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--brand);
+        line-height: 1.2;
+    }
+    .stat-box .label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+
+    .my-product-item {
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        align-items: center;
+        cursor: pointer;
+    }
+    .my-product-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .my-product-thumb {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #eee;
+        min-width: 60px;
+    }
+    .my-product-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .my-product-info {
+        flex: 1;
+    }
+    .my-product-stats {
+        text-align: right;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+    
+    /* === CHAT (LIST & DETAIL) STYLES === */
+    .chat-list-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        cursor: pointer;
+    }
+    .chat-list-item:last-child { border-bottom: none; }
+    .chat-list-item .avatar {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 50%;
+        font-size: 18px;
+        background: var(--bg);
+        color: var(--brand);
+    }
+    .chat-list-info { flex: 1; overflow: hidden; }
+    .chat-list-name { font-weight: 700; font-size: 15px; }
+    .chat-list-preview {
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .chat-list-meta {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: right;
+    }
+
+    #chat-detail-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+        margin-bottom: 10px;
+    }
+    #chat-detail-header .avatar {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 50%;
+        font-size: 16px;
+    }
+
+    .chat-container {
+        height: 400px;
+        max-height: 60vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column; /* Pesan baru di bawah */
+        padding: 10px;
+        background: var(--bg);
+        border: 1px solid rgba(0,0,0,0.04);
+        border-radius: var(--radius);
+    }
+    /* Kontainer untuk bubble agar pesan menumpuk dari bawah */
+    .chat-bubbles-container {
+        display: flex;
+        flex-direction: column;
+        padding-top: 10px; /* Jarak dari atas */
+    }
+    
+    .chat-message {
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: var(--card);
+        margin-bottom: 8px;
+        max-width: 85%;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.03);
+        align-self: flex-start;
+    }
+    .chat-message .msg-text {
+        font-size: 14px;
+        word-wrap: break-word;
+        white-space: pre-wrap; /* To respect newlines */
+    }
+    .chat-message.sent {
+        background: var(--brand);
+        color: white;
+        align-self: flex-end;
+    }
+    
+    /* === FINANCE PAGE TABS === */
+    .tabs-nav {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+        margin-bottom: 12px;
+    }
+    .tab-btn {
+        padding: 8px 14px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px; /* Overlap border */
+    }
+    .tab-btn.active {
+        color: var(--brand);
+        border-bottom-color: var(--brand);
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* === MODAL STYLES === */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+    .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .modal-content {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 18px;
+        width: 90%;
+        max-width: 420px;
+        max-height: 80vh;
+        overflow-y: auto;
+        transform: scale(0.95);
+        transition: transform 0.2s;
+    }
+    .modal-overlay.active .modal-content {
+        transform: scale(1);
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .modal-header h3 {
+        margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+
+    <header class="app-header">
+      <div class="header-top">
+
+        <div class="logo" onclick="showPage('home')">
+          <div class="badge" style="padding: 0; background: transparent; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"> 
+            <img src="logo.png" alt="Jorsell Logo" style="width: 40px; height: 40px; object-fit: cover; border-radius: 10px;">
+          </div>
+          </div>
+
+        <div class="search">
+          <span style="margin-right:8px; opacity: 0.7;">⌕</span>
+          <input id="search-input" placeholder="Cari di Jorsell..." />
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <div class="icon-btn" id="btn-wishlist" title="Notifikasi">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+              <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 1.886.608 3.631 1.732 4.763L4 12v1h8v-1l-1.732-1.237A4.002 4.002 0 0 0 12 6c0-1.581-.79-2.99-2.203-3.921L8 1.918z"/>
+            </svg>
+          </div>
+          <div class="icon-btn" id="btn-cart-top" title="Keranjang">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+              <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      </header>
+    <main>
+<div id="notif-popup" class="card hidden" 
+     style="position:absolute;top:70px;right:10px;z-index:999;
+            width:300px;max-height:380px;overflow:auto;
+            box-shadow:0 10px 20px rgba(0,0,0,0.15)">
+  <h4>Notifikasi</h4>
+  <div id="notif-list" class="small">Belum ada notifikasi</div>
+</div>
+
+      <section id="auth" class="page card active">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div>
+      <h2>Masuk ke Akun</h2>
+      <div class="small">Akses jual & beli produk digital</div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;display:grid;gap:8px">
+    <input id="auth-email" type="email" placeholder="Email" required />
+    <input id="auth-pass" type="password" placeholder="Password" required />
+    <div style="display:flex;gap:8px">
+      <button id="btn-login" class="btn">Login</button>
+      <button id="btn-show-register" class="btn-outline">Daftar</button>
+    </div>
+    <button id="btn-google" class="btn-outline">Login dengan Google</button>
+    <div id="auth-note" class="small" style="color:var(--muted)"></div>
+  </div>
+</section>
+
+<section id="register" class="page card">
+  <h2>Daftar Akun Baru</h2>
+  <div class="small">Bergabung di marketplace Jorsell dan mulai jual / beli produk digital</div>
+
+  <div style="margin-top:12px;display:grid;gap:8px">
+    <input id="reg-name" type="text" placeholder="Nama Lengkap" required />
+    <input id="reg-email" type="email" placeholder="Email" required />
+    <input id="reg-pass" type="password" placeholder="Password (min 6 karakter)" required />
+    <div style="display:flex;gap:8px">
+      <button id="btn-register" class="btn">Daftar</button>
+      <button id="btn-show-login" class="btn-outline">Sudah punya akun?</button>
+    </div>
+    <div id="reg-note" class="small" style="color:var(--muted)"></div>
+  </div>
+</section>
+
+      <section id="home" class="page card">
+        <div class="carousel" id="carousel">
+          <img id="carousel-img" src="" alt="banner">
+          <div class="dots" id="carousel-dots"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <strong>Kategori</strong>
+          <a href="#" id="see-all-cats" class="small" onclick="showPage('categories')">Lihat semua</a>
+        </div>
+        <div class="cats" id="home-cats"></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
+          <strong>🔥 Trending Produk (Real: Berdasarkan Penjualan)</strong>
+          <div class="small" onclick="loadTrendingProducts()">Refresh</div>
+        </div>
+        <div class="products" id="trending-products"></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px">
+          <strong>Produk Terbaru</strong>
+          <div class="small">Baru diunggah</div>
+        </div>
+        <div class="products" id="latest-products"></div>
+      </section>
+
+<section id="categories" class="page card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3>Kategori Produk Digital</h3>
+    <div class="small">Pilih kategori untuk melihat produk</div>
+  </div>
+  
+  <div id="categories-list" style="margin-top:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
+</section>
+
+<section id="product-detail" class="page card">
+    <div id="product-detail-content" class="product-detail-info">
+        </div>
+</section>
+
+      <section id="cart" class="page card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Keranjang</h3>
+          <div class="small">{<span id="cart-count">0</span>} item</div>
+        </div>
+        <div id="cart-list" style="margin-top:12px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <div class="small">Total</div>
+          <div id="cart-total" style="font-weight:700">Rp0</div>
+        </div>
+        <div style="margin-top:12px"><button id="btn-checkout" class="btn">Checkout</button></div>
+      </section>
+
+      <section id="chat" class="page card">
+        <h3>💬 Daftar Percakapan</h3>
+        <div class="small">Semua chat Anda dengan penjual akan muncul di sini.</div>
+        
+        <div id="chat-list-container" style="margin-top:12px;">
+            <div id="chat-list-empty" class="small" style="text-align:center;padding:20px;">
+              Memuat percakapan...
+            </div>
+        </div>
+      </section>
+      <section id="chat-detail" class="page card">
+          <div id="chat-detail-header">
+              <button class="btn-outline" style="width:auto;flex:0;padding:8px 10px;" onclick="showPage('chat')">←</button>
+              <div class="avatar" id="chat-detail-avatar">?</div>
+              <div>
+                  <div id="chat-detail-header-name" style="font-weight:700">Memuat...</div>
+                  <div class="small" style="color:#059669;margin-top:-2px" id="chat-detail-status">Online</div>
+              </div>
+          </div>
+
+          <div id="chat-detail-box" class="chat-container">
+            <div class="chat-bubbles-container" id="chat-bubbles-container">
+                </div>
+          </div>
+          
+          <div id="chat-detail-input-row" style="display:flex;gap:8px;margin-top:12px">
+              <input id="chat-detail-input" placeholder="Ketik pesan..." />
+              <button id="btn-send-chat-detail" class="btn">Kirim</button>
+          </div>
+      </section>
+      <section id="profile" class="page card">
+
+    <div class="card" style="padding:0; margin-bottom:12px; overflow:hidden;">
+        <div class="profile-v2-header">
+            <div style="position:relative;">
+                <div class="avatar" id="profile-avatar" style="cursor:pointer;" title="Klik untuk ganti foto">U</div>
+                <input type="file" id="avatar-upload-input" accept="image/*" style="display:none;">
+            </div>
+            <div style="flex:1; overflow:hidden;">
+                <div id="profile-name" style="font-weight:700;font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Nama Pengguna</div>
+                <div id="profile-email" style="font-size:13px;opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:12px;opacity:0.9">Saldo</div>
+                <div class="profile-balance-container">
+                    <div id="btn-toggle-balance" title="Tampilkan/Sembunyikan Saldo">
+                        </div>
+                    <div id="profile-balance" data-balance="0">Rp0</div>
+                </div>
+            </div>
+        </div>
+        <div style="padding:12px; display:flex; justify-content:space-between; align-items:center;">
+             <button id="btn-logout" class="btn-outline" style="width:100%; color:#ef4444; border-color:#ef444450;">Logout</button>
+        </div>
+    </div>
+    
+    <div class="profile-menu-grid">
+        <div class="profile-menu-item" onclick="showPage('my-shop')">
+            <div style="font-size:24px; margin-bottom:4px">🏪</div>
+            <div style="font-weight:700">Toko Saya</div>
+            <div class="small">Lihat statistik & produk</div>
+        </div>
+        <div class="profile-menu-item" onclick="document.getElementById('profile-upload-card').classList.toggle('hidden'); if(!document.getElementById('profile-upload-card').classList.contains('hidden')) { this.scrollIntoView({ behavior: 'smooth', block: 'start' }); }">
+            <div style="font-size:24px; margin-bottom:4px">⬆️</div>
+            <div style="font-weight:700">Upload Produk</div>
+            <div class="small">Tambahkan barang baru</div>
+        </div>
+        <div class="profile-menu-item" onclick="showPage('finance')">
+            <div style="font-size:24px; margin-bottom:4px">💰</div>
+            <div style="font-weight:700">Keuangan</div>
+            <div class="small">Saldo, Penarikan & Afiliasi</div>
+        </div>
+        <div class="profile-menu-item" onclick="document.getElementById('profile-account-card').classList.toggle('hidden'); if(!document.getElementById('profile-account-card').classList.contains('hidden')) { this.scrollIntoView({ behavior: 'smooth', block: 'start' }); }">
+            <div style="font-size:24px; margin-bottom:4px">💳</div>
+            <div style="font-weight:700">Rekening Bank</div>
+            <div class="small">Atur akun penerima dana</div>
+        </div>
+        <div class="profile-menu-item" onclick="showHelpModal()">
+            <div style="font-size:24px; margin-bottom:4px">❓</div>
+            <div style="font-weight:700">Pusat Bantuan</div>
+            <div class="small">Lihat FAQ & Bantuan</div>
+        </div>
+    </div>
+
+    <div class="card hidden" id="profile-upload-card" style="margin-top:12px;">
+        <h4>Upload Produk Baru</h4>
+        <div style="display:grid;gap:6px;margin-top:8px">
+          <label class="small">File</label><input type="file" id="file-upload" />
+          <label class="small">Judul</label><input id="prod-title" />
+          <label class="small">Kategori</label><input id="prod-cat" placeholder="Ebook, Template..." />
+          <label class="small">Harga (Rp)</label><input id="prod-price" type="number" />
+          <label class="small">Deskripsi</label><textarea id="prod-desc"></textarea>
+          <button id="submit-product" class="btn" style="margin-top:8px">Upload & Simpan</button>
+          <div id="upload-note" class="small" style="color:var(--muted)"></div>
+        </div>
+    </div>
+    
+    <div class="card hidden" id="profile-account-card" style="margin-top:12px;">
+        <h4>Rekening Saya</h4>
+        <div class="small">Simpan rekening bank atau e-wallet untuk penarikan otomatis.</div>
+    
+        <div style="display:grid;gap:6px;margin-top:8px">
+          <label class="small">Tipe Akun</label>
+          <select id="account-type">
+            <option value="bank">Bank</option>
+            <option value="ewallet">E-Wallet</option>
+          </select>
+    
+          <label class="small">Nama Bank / E-Wallet</label>
+          <select id="account-name"></select>
+    
+          <label class="small">Nomor Rekening / E-Wallet</label>
+          <input id="account-number" placeholder="Contoh: 1234567890" />
+    
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btn-save-account" class="btn" style="flex:1">Simpan</button>
+            <button id="btn-clear-account" class="btn-outline" style="flex:1">Hapus</button>
+          </div>
+          <div id="save-account-note" class="muted-note"></div>
+        </div>
+    </div>
+    
+    </section>
+
+<section id="finance" class="page card">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+      <button class="btn-outline" style="width:auto;flex:0;padding:8px 10px;" onclick="showPage('profile')">←</button>
+      <h3>💰 Halaman Keuangan</h3>
+    </div>
+
+    <div class="tabs-nav">
+        <button id="btn-tab-withdraw" class="tab-btn active">Penarikan</button>
+        <button id="btn-tab-affiliate" class="tab-btn">Afiliasi</button>
+    </div>
+
+    <div id="tab-content-withdraw" class="tab-content active">
+        <div class="small">Tarik saldo ke rekening atau e-wallet yang terdaftar.</div>
+        <div style="display:grid;gap:6px;margin-top:8px">
+          <label class="small">Jumlah (Rp)</label><input id="withdraw-amount" type="number" placeholder="50000" />
+          
+          <label class="small">Metode</label>
+          <input id="withdraw-method" readonly placeholder="Atur di Rekening Bank" />
+          
+          <label class="small">Tujuan</label>
+          <input id="withdraw-destination" readonly placeholder="Atur di Rekening Bank" />
+          
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btn-request-withdraw" class="btn" style="flex:1">Kirim</button>
+            <button id="btn-load-withdraws" class="btn-outline" style="flex:1">Riwayat</button>
+          </div>
+          <div id="withdraw-note" class="muted-note">Pastikan rekening sudah diatur di halaman Profil.</div>
+          <div id="withdraw-list" style="margin-top:8px"></div>
+        </div>
+    </div>
+    
+    <div id="tab-content-affiliate" class="tab-content">
+        <div class="small">Bagikan link produk untuk dapat komisi.</div>
+        <div class="link-box" style="margin-top:8px">
+            <input id="affiliate-link" readonly placeholder="Login untuk membuat link afiliasi" />
+            <button id="btn-copy-aff" class="btn-outline">Salin</button>
+        </div>
+        <div id="affiliate-note" class="muted-note">Link berisi ?ref=USERID</div>
+        <div style="margin-top:12px; border-top: 1px solid rgba(0,0,0,0.05); padding-top:12px;">
+            <strong>Statistik Afiliasi</strong>
+            <div id="aff-stats" class="small muted-note" style="margin-top:8px">Memuat statistik...</div>
+        </div>
+    </div>
+</section>
+<section id="my-shop" class="page card">
+    <h3>🏪 Toko Saya</h3>
+    <div class="small">Lihat statistik penjualan dan kelola produk Anda.</div>
+
+    <div class="card shop-stat-grid" style="margin-top:12px; margin-bottom:12px;">
+        <div class="stat-box">
+            <div class="number" id="shop-stat-sales">0</div>
+            <div class="label">Total Terjual</div>
+        </div>
+        <div class="stat-box">
+            <div class="number" id="shop-stat-views">0</div>
+            <div class="label">Total Dilihat (Asumsi)</div>
+        </div>
+        <div class="stat-box">
+            <div class="number" id="shop-stat-products">0</div>
+            <div class="label">Jumlah Produk</div>
+        </div>
+    </div>
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <strong>Produk yang Saya Jual</strong>
+        <div class="small" onclick="loadMyProducts()">Refresh</div>
+    </div>
+
+    <div id="my-products-list" class="card" style="padding:12px; margin-bottom:0; box-shadow:none;">
+        <div class="small">Memuat produk...</div>
+    </div>
+
+</section>
+</main>
+
+    <footer style="padding:8px 12px;text-align:center;color:var(--muted)">© <span id="year"></span> Jorsell</footer>
+
+    <nav class="bottom-nav" id="bottom-nav">
+      <div class="nav-item" data-page="home">🏠<div>Beranda</div></div>
+      <div class="nav-item" data-page="categories">🗂️<div>Kategori</div></div>
+      <div class="nav-item" data-page="cart">🛒<div>Keranjang</div></div>
+      <div class="nav-item" data-page="chat">💬<div>Chat</div></div>
+      <div class="nav-item" data-page="profile">👤<div>Profil</div></div>
+    </nav>
+  </div>
+
+  <div id="help-modal" class="modal-overlay">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h3>❓ Pusat Bantuan (FAQ)</h3>
+              <button class="btn-outline" style="width:auto;flex:0;padding:4px 8px;font-size:14px;" onclick="hideHelpModal()">Tutup</button>
+          </div>
+          <div style="display:grid; gap:12px;">
+              <div>
+                  <strong class="small" style="color:var(--text)">Bagaimana cara membeli produk?</strong>
+                  <p class="small" style="margin:2px 0;">Anda dapat membeli produk dengan menekan tombol "Beli Sekarang" atau menambahkannya ke keranjang terlebih dahulu. Saat ini, fitur pembayaran masih dalam tahap simulasi.</p>
+              </div>
+              <div>
+                  <strong class="small" style="color:var(--text)">Bagaimana cara menjual produk?</strong>
+                  <p class="small" style="margin:2px 0;">Masuk ke halaman Profil, lalu pilih menu "Upload Produk". Isi semua data yang diperlukan dan file Anda akan otomatis tampil di marketplace.</p>
+              </div>
+              <div>
+                  <strong class="small" style="color:var(--text)">Bagaimana cara chat penjual?</strong>
+                  <p class="small" style="margin:2px 0;">Buka halaman detail produk, lalu tekan tombol "💬 Chat". Anda akan diarahkan ke ruang chat privat dengan penjual. (Pastikan Anda sudah menjalankan SQL di Supabase agar fitur ini berfungsi).</p>
+              </div>
+          </div>
+      </div>
+  </div>
+  <script>
+  // ---------- Supabase init (fixed) ----------
+  // GANTI INI DENGAN URL & KEY SUPABASE ANDA
+  const SUPABASE_URL =              'https://tbmzbglbweiypglisozo.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRibXpiZ2xid2VpeXBnbGlzb3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMTYxNzQsImV4cCI6MjA3Nzg5MjE3NH0.Fjxac7SMeZzf4OY1TED59VE9fgMCZ7m7yfqlVvmQemM';
+
+  // use the global 'supabase' script to get createClient
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('✅ Supabase client initialized');
+
+  // ---------- Helpers ----------
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const fmt = n => { n = Number(n)||0; return 'Rp' + n.toLocaleString('id-ID'); };
+  function escapeHTML(s){ if(!s) return ''; return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] || c)); }
+  
+  // SVG IKON SALDO BARU
+  const ICON_EYE = `<svg class="balance-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.18l.879-.659A11.09 11.09 0 0110 6.5c1.886 0 3.68.49 5.21.879l.879.659a1.651 1.651 0 010 1.18l-.879.659A11.09 11.09 0 0110 13.5c-1.886 0-3.68-.49-5.21-.879l-.879-.659zM10 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /></svg>`;
+  const ICON_EYE_SLASH = `<svg class="balance-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.99 10.99 0 003.182-2.12.651.651 0 000-.918A11.09 11.09 0 0010 6.5c-.75 0-1.485.08-2.196.23l-1.838-1.838A11.09 11.09 0 00.664 10c.057.147.118.29.183.43l-1.12 1.12zM10 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd" /><path d="M10 13.5a11.09 11.09 0 01-5.21-.879l-.879-.659a1.651 1.651 0 010-1.18l.879-.659A11.09 11.09 0 0110 6.5c.348 0 .693.016 1.033.047l1.07 1.07a3.5 3.5 0 00-4.274 4.274l-1.07 1.07A11.088 11.088 0 0110 13.5z" /></svg>`;
+
+  
+  /** Renders the star rating based on the average rating. **/
+  function renderStar(rating){
+    rating = Math.round(rating * 2) / 2; // round to nearest half star
+    let stars = '';
+    for(let i=1; i<=5; i++){
+        if(i <= rating) stars += '★'; // Full star
+        else if (i - 0.5 === rating) stars += '½'; // Half star
+        else stars += '☆'; // Empty star
+    }
+    return `<span class="rating" style="letter-spacing:1px">${stars.replace('½','½ ')}</span>`;
+  }
+
+  // TAMBAHAN: Fungsi untuk mendapatkan URL Gambar (Produk & Avatar)
+  function getStorageUrl(bucketName, filePath) {
+    if (!filePath) return '';
+    const { data } = sb.storage.from(bucketName).getPublicUrl(filePath);
+    return data.publicUrl;
+  }
+  function getProductImageUrl(filePath) { return getStorageUrl('products', filePath); }
+  function getAvatarUrl(filePath) { return getStorageUrl('avatars', filePath); } 
+
+  /** NEW FIX: Robust function to create SVG Data URL for image fallback **/
+  function createFallbackSvg(text, size=100, fontSize=18) {
+    if (!text) text = '??';
+    const initials = encodeURIComponent((text.trim().slice(0,2) || '??').toUpperCase());
+    const svgContent = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><rect width='100%' height='100%' fill='#F0EFFF'/><text x='50%' y='50%' font-size='${fontSize}' fill='%235D3A9B' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central'>${initials}</text></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svgContent)}`;
+  }
+
+
+  let currentUser = null;
+  let currentProductId = null; 
+  let isBalanceHidden = false; // State untuk sembunyikan saldo
+  
+  // Variabel untuk Chat Realtime
+  let currentConversationId = null;
+  let currentChatSubscription = null;
+
+
+  // small toast
+  function toast(msg, time=2200){
+    const el = document.createElement('div'); el.className='toast'; el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), time);
+  }
+
+  // ---------- UI helpers ----------
+  function showPage(id){
+    $$('.page').forEach(p=>p.classList.remove('active'));
+    const el = document.getElementById(id);
+    if(el) el.classList.add('active');
+    // nav active
+    $$('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===id));
+    // Clear search filter when changing page
+    // $('#search-input').value = ''; // Kita nonaktifkan agar pencarian bisa persisten jika pindah
+    
+    // Load data specific to the new page
+    if(id === 'home') loadHomeProducts();
+    if(id === 'profile' && currentUser) renderProfile(); 
+    if(id === 'my-shop' && currentUser) loadMyProducts();
+    if(id === 'finance') loadFinancePage(); // NEW: Memuat data finance
+    if(id === 'chat') loadChatListPage(); // NEW: Memuat data list chat
+    
+    // NEW: Unsubscribe dari channel chat jika kita meninggalkan halaman detail chat
+    if (id !== 'chat-detail') {
+        unsubscribeFromChat();
+    }
+  }
+  
+  // Fungsi untuk mempopulasi detail rekening (dipanggil di Profile & Finance)
+  function populateAccountDetails() {
+      if (!currentUser) return;
+      const metadata = currentUser.user_metadata || {};
+      
+      // Data untuk halaman profil
+      const accTypeEl = document.getElementById('account-type');
+      const accNameEl = document.getElementById('account-name');
+      const accNumEl = document.getElementById('account-number');
+      
+      // Data untuk halaman finance
+      const withdrawMethodEl = document.getElementById('withdraw-method');
+      const withdrawDestEl = document.getElementById('withdraw-destination');
+      
+      const accType = metadata.account_type || 'bank';
+      const accName = metadata.account_name || '';
+      const accNumber = metadata.account_number || '';
+      
+      // Isi form di halaman Profil
+      if(accTypeEl){
+          populateAccountNames(accType); // Isi dropdown bank/ewallet
+          accTypeEl.value = accType;
+          if(accNameEl && accName) accNameEl.value = accName;
+          if(accNumEl) accNumEl.value = accNumber || '';
+      } 
+      
+      // Isi (readonly) form di halaman Finance
+      if(withdrawMethodEl && withdrawDestEl){
+          if(accName && accNumber){
+              withdrawMethodEl.value = accName.toUpperCase();
+              withdrawDestEl.value = accNumber;
+              withdrawMethodEl.disabled = true;
+              withdrawDestEl.disabled = true;
+          } else {
+              withdrawMethodEl.value = '';
+              withdrawDestEl.value = '';
+              withdrawMethodEl.disabled = false; // Harusnya tetap readonly
+              withdrawDestEl.disabled = false;
+          }
+      }
+  }
+
+
+  // --- Profile Rendering V2 ---
+  async function renderProfile(){
+    if(!currentUser){
+      $('#profile-name').textContent='-';
+      $('#profile-email').textContent='-';
+      $('#profile-balance').textContent='Rp0';
+      $('#profile-avatar').textContent='U';
+      return;
+    }
+    // Fetch latest user data
+    const { data: userData, error: userError } = await sb.auth.getUser();
+    if (userError) {
+        console.error("Error fetching user data:", userError);
+    } else {
+        currentUser = userData.user || currentUser; 
+    }
+
+    const metadata = currentUser.user_metadata || {};
+
+    $('#profile-name').textContent = metadata.full_name || currentUser.email || 'User';
+    $('#profile-email').textContent = currentUser.email || '-';
+
+    // --- LOGIKA SALDO BARU ---
+    const balanceEl = $('#profile-balance');
+    const toggleBtn = $('#btn-toggle-balance');
+    const realBalance = metadata.balance || 0;
+    
+    balanceEl.dataset.balance = realBalance; // Simpan nilai asli di data attribute
+
+    if (isBalanceHidden) {
+        balanceEl.textContent = 'Rp ••••••••';
+        toggleBtn.innerHTML = ICON_EYE_SLASH;
+    } else {
+        balanceEl.textContent = fmt(realBalance);
+        toggleBtn.innerHTML = ICON_EYE;
+    }
+    // --- AKHIR LOGIKA SALDO BARU ---
+
+    // LOGIKA TAMPIL FOTO PROFIL
+    const avatarEl = $('#profile-avatar');
+    const fallbackSvg = createFallbackSvg(metadata.full_name || 'U', 60, 24);
+    if (metadata.avatar_url) {
+        const imgUrl = getAvatarUrl(metadata.avatar_url);
+        avatarEl.innerHTML = `<img src="${imgUrl}" alt="Avatar" onerror="this.onerror=null; this.src='${fallbackSvg}';" />`;
+    } else {
+        avatarEl.textContent = (metadata.full_name||currentUser.email||'U')[0].toUpperCase();
+        avatarEl.innerHTML = `<img src="${fallbackSvg}" alt="Avatar Fallback" />`;
+    }
+    
+    // Memanggil fungsi populate rekening
+    populateAccountDetails();
+    
+    // ensure all toggle cards are hidden on initial load
+    $('#profile-upload-card').classList.add('hidden');
+    $('#profile-account-card').classList.add('hidden');
+  }
+  
+  // FUNGSI UPLOAD AVATAR
+  async function uploadAvatar(e) {
+      if (!currentUser) return toast('Login dulu');
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const avatarEl = $('#profile-avatar');
+      const oldContent = avatarEl.innerHTML;
+      avatarEl.innerHTML = `<div style="font-size:24px; line-height:60px;">...</div>`; 
+
+      try {
+          const filename = `public/${currentUser.id}_${Date.now()}.${file.name.split('.').pop()}`;
+          const { error: uploadError } = await sb.storage.from('avatars').upload(filename, file, { 
+              upsert: true 
+          });
+          if (uploadError) throw uploadError;
+
+          const { data: updateData, error: updateError } = await sb.auth.updateUser({
+              data: { avatar_url: filename }
+          });
+          if (updateError) throw updateError;
+          
+          currentUser = updateData.user;
+          renderProfile(); 
+          toast('Foto profil berhasil diubah.');
+
+      } catch (err) {
+          console.error('uploadAvatar', err);
+          toast('Gagal upload: ' + (err.message || 'Error'));
+          avatarEl.innerHTML = oldContent;
+      }
+  }
+
+  // FUNGSI TOMBOL SALDO BARU
+  function toggleBalanceVisibility() {
+      isBalanceHidden = !isBalanceHidden; // Toggle state
+      const balanceEl = $('#profile-balance');
+      const toggleBtn = $('#btn-toggle-balance');
+      const realBalance = balanceEl.dataset.balance || 0;
+
+      if (isBalanceHidden) {
+          balanceEl.textContent = 'Rp ••••••••';
+          toggleBtn.innerHTML = ICON_EYE_SLASH;
+      } else {
+          balanceEl.textContent = fmt(realBalance);
+          toggleBtn.innerHTML = ICON_EYE;
+      }
+  }
+
+  // FUNGSI MODAL BANTUAN BARU
+  function showHelpModal() {
+      $('#help-modal').classList.add('active');
+  }
+  function hideHelpModal() {
+      $('#help-modal').classList.remove('active');
+  }
+  
+  // FUNGSI HALAMAN KEUANGAN BARU
+  function loadFinancePage() {
+      if (!currentUser) return showPage('auth');
+      
+      // Panggil fungsi yang mengisi data rekening
+      populateAccountDetails();
+      
+      // Muat data untuk tab
+      loadWithdraws();
+      loadAffiliateStats();
+      
+      // Set tab 'Penarikan' sebagai default
+      showFinanceTab('withdraw');
+  }
+  
+  function showFinanceTab(tabName) {
+      // Sembunyikan semua konten
+      $$('.tab-content').forEach(c => c.classList.remove('active'));
+      // Nonaktifkan semua tombol
+      $$('.tab-btn').forEach(b => b.classList.remove('active'));
+      
+      // Tampilkan yang dipilih
+      $(`#tab-content-${tabName}`).classList.add('active');
+      $(`#btn-tab-${tabName}`).classList.add('active');
+  }
+
+
+  async function checkout() {
+    if (!currentUser) return toast('Login dulu');
+    
+    const { data: items, error } = await sb
+      .from('carts')
+      .select('product_id, qty, products(price)')
+      .eq('owner', currentUser.id);
+
+    if (error || !items || !items.length) {
+      toast('Keranjang kosong atau error');
+      return;
+    }
+
+    const total = items.reduce((a, b) => a + (b.products?.price || 0) * b.qty, 0);
+
+    const { data: order, error: orderError } = await sb
+      .from('orders')
+      .insert([{ user_id: currentUser.id, total }])
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error(orderError);
+      return toast('Gagal checkout. Pastikan tabel orders sudah ada dan RLS benar.');
+    }
+
+    const orderItems = items.map(i => ({
+      order_id: order.id,
+      product_id: i.product_id,
+      price: i.products.price,
+      quantity: i.qty
+    }));
+
+    await sb.from('order_items').insert(orderItems); 
+    await sb.from('carts').delete().eq('owner', currentUser.id); 
+
+    toast('Checkout berhasil 🎉. Order ID: ' + order.id);
+    loadCart();
+  }
+
+  // ---------- Auth ----------
+  async function initAuth(){
+      sb.auth.onAuthStateChange((event, session) => {
+        if(session && session.user){
+          currentUser = session.user;
+          postLoginSetup();
+        } else {
+          currentUser = null;
+          onLogout();
+        }
+      });
+  }
+
+  $('#btn-checkout').addEventListener('click', checkout);
+  $('#btn-logout').addEventListener('click', signOut); 
+
+  async function signOut(){
+    try{
+      await sb.auth.signOut();
+      currentUser = null;
+      onLogout();
+      toast('Logout berhasil');
+    }catch(err){ console.error('signOut', err); toast('Gagal logout');}
+  }
+
+  function onLogout(){
+    renderProfile();
+    loadHomeProducts();
+    loadCategories();
+    loadCart();
+    unsubscribeFromChat(); // Unsub dari chat apapun
+    showPage('auth');
+    $('#review-form-container')?.classList.remove('hidden');
+    $('#review-form-login-note')?.classList.remove('hidden');
+    $('#review-form-logged-in')?.classList.add('hidden');
+  }
+
+  async function postLoginSetup(){
+    renderProfile();
+    await loadHomeProducts();
+    await loadCategories();
+    await loadCart();
+    await loadMyProducts();
+    $('#review-form-login-note')?.classList.add('hidden');
+    $('#review-form-logged-in')?.classList.remove('hidden');
+    showPage('home');
+  }
+
+  // Carousel (simple)
+  // --- Banner menggunakan file gambar (png/jpg) ---
+  const banners = [
+    { imgUrl: 'banner1.png' }, 
+    { imgUrl: 'banner2.png' }, 
+    { imgUrl: 'banner3.png' }
+  ];
+  let carouselIdx = 0;
+
+  function renderCarousel(){
+    const img = $('#carousel-img'), dots = $('#carousel-dots');
+    if (!img || !dots) return; 
+    
+    img.src = banners[carouselIdx].imgUrl; 
+    img.alt = "Banner " + (carouselIdx + 1); 
+    
+    dots.innerHTML = banners.map((b,i)=>`<div class="dot ${i===carouselIdx? 'active':''}"></div>`).join('');
+  }
+  setInterval(()=>{ carouselIdx=(carouselIdx+1)%banners.length; renderCarousel(); }, 4000);
+  renderCarousel();
+
+  // ---------- Affiliate tracking (di dalam Halaman Finance) ----------
+  async function trackAffiliateClick(refId, productId){
+    if(!refId) return;
+    try{
+      const { data: existing, error: selErr } = await sb.from('affiliates').select('*').eq('user_id', refId).eq('product_id', productId).limit(1);
+      if(selErr) { console.warn('aff select err', selErr); }
+      
+      const payload = { user_id: refId, product_id: productId, last_click_at: new Date().toISOString() };
+      
+      if(existing && existing.length){
+        const rec = existing[0];
+        await sb.from('affiliates').update({ clicks: (rec.clicks||0)+1, ...payload }).eq('id', rec.id);
+      } else {
+        await sb.from('affiliates').insert([{ clicks: 1, sales: 0, commission_total: 0, created_at: new Date().toISOString(), ...payload }]);
+      }
+      console.log('Affiliate click tracked for', refId, productId);
+    }catch(err){
+      console.error('trackAffiliateClick', err);
+    }
+  }
+
+  function createAffiliateLink(productId){
+    if(!currentUser) return '';
+    const base = location.origin + location.pathname;
+    if(productId) return `${base}?ref=${encodeURIComponent(currentUser.id)}&product=${encodeURIComponent(productId)}`;
+    return `${base}?ref=${encodeURIComponent(currentUser.id)}`;
+  }
+
+  async function copyAffiliateLink(){
+    const val = $('#affiliate-link').value;
+    if(!val) return alert('Login untuk membuat link afiliasi');
+    try{
+      await navigator.clipboard.writeText(val);
+      toast('Link afiliasi disalin');
+    }catch(err){
+      prompt('Salin manual link afiliasi ini:', val);
+    }
+  }
+
+  async function loadAffiliateStats(){
+    if(!currentUser) return;
+    const affStatsEl = $('#aff-stats');
+    if (!affStatsEl) return; // Jika elemen tidak ada di DOM (misal halaman belum dimuat)
+    
+    affStatsEl.textContent = 'Memuat statistik...';
+    try{
+      const { data, error } = await sb.from('affiliates').select('product_id, clicks, sales, commission_total').eq('user_id', currentUser.id);
+      if(error) throw error;
+      if(!data || !data.length) { 
+          affStatsEl.textContent = 'Belum ada aktivitas afiliasi.'; 
+          // Isi link afiliasi di tab finance
+          $('#affiliate-link').value = createAffiliateLink();
+          return; 
+      }
+      const totalClicks = data.reduce((s,r)=>s+(r.clicks||0),0);
+      const totalSales = data.reduce((s,r)=>s+(r.sales||0),0);
+      const totalComm = data.reduce((s,r)=>s+(r.commission_total||0),0);
+      affStatsEl.textContent = `Total Clicks: ${totalClicks} • Total Sales: ${totalSales} • Total Komisi: ${fmt(totalComm)}`;
+      
+      // Isi link afiliasi di tab finance
+      $('#affiliate-link').value = createAffiliateLink();
+    }catch(err){
+      console.error('loadAffiliateStats', err);
+      affStatsEl.textContent = 'Gagal memuat statistik.';
+    }
+  }
+
+  // ---------- Products & Categories ----------
+
+  async function loadTrendingProducts() {
+    $('#trending-products').innerHTML = '<div class="small">Memuat Trending (Berdasarkan Sales)...</div>';
+    try {
+      const { data, error } = await sb.from('products')
+        .select('*, product_reviews(rating)') 
+        .order('sales_count', { ascending: false }) 
+        .order('created_at', { ascending: false }) 
+        .limit(4);
+      if(error) throw error;
+      renderProductsGrid(data||[],'#trending-products');
+    }catch(err){
+        $('#trending-products').innerHTML = '<div class="small">Gagal memuat: '+err.message+'</div>';
+        console.error('loadTrendingProducts', err);
+    }
+  }
+
+  // FUNGSI PENCARIAN HEADER BARU
+  async function loadLatestProducts(q='') {
+    $('#latest-products').innerHTML = '<div class="small">Memuat produk terbaru...</div>';
+    try{
+      let query = sb.from('products').select('*, product_reviews(rating)').order('created_at',{ascending:false}).limit(8);
+      
+      if(q) {
+        // PENCARIAN BARU: Cari di 'title' ATAU 'category'
+        const searchString = `%${q}%`;
+        query = sb.from('products')
+          .select('*, product_reviews(rating)')
+          .or(`title.ilike.${searchString},category.ilike.${searchString}`) // <--- LOGIKA BARU
+          .order('created_at',{ascending:false})
+          .limit(60);
+        
+        // Kosongkan trending jika sedang mencari
+        $('#trending-products').innerHTML = `<div class="small">Hasil pencarian untuk: <strong>${escapeHTML(q)}</strong></div>`;
+      } else {
+        // Jika tidak mencari, muat juga trending
+        loadTrendingProducts();
+      }
+      
+      const { data, error } = await query;
+      if(error) throw error;
+      renderProductsGrid(data||[],'#latest-products');
+    }catch(err){
+      $('#latest-products').innerHTML = '<div class="small">Gagal memuat: '+err.message+'</div>';
+      console.error('loadLatestProducts', err);
+    }
+  } 
+  
+  function loadHomeProducts(q=''){ 
+      // loadTrendingProducts() sekarang dipanggil di dalam loadLatestProducts jika q kosong
+      loadLatestProducts(q); 
+  } 
+
+  function renderProductsGrid(list, selector){ 
+    const container = document.querySelector(selector); 
+    container.innerHTML = ''; 
+    if(!list.length) return container.innerHTML = '<div class="small">Belum ada produk</div>'; 
+    list.forEach(p=>{ 
+      const ratings = p.product_reviews?.map(r => r.rating) || []; 
+      const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0; 
+      const imageUrl = getProductImageUrl(p.file_url); 
+      const fallbackSvg = createFallbackSvg(p.title || '');
+      const el = document.createElement('div'); 
+      el.className='product'; 
+      el.onclick = ()=> showProductDetail(p.id); 
+      el.innerHTML = ` 
+        <div class="p-thumb"> 
+          ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHTML(p.title)}" onerror="this.onerror=null; this.src='${fallbackSvg}';"/>` : `<img src="${fallbackSvg}" alt="Fallback"/>`}
+        </div> 
+        <div class="p-title">${escapeHTML(p.title||'Untitled')}</div> 
+        <div class="p-meta">${escapeHTML(p.category||'')}</div> 
+        <div class="p-meta" style="font-weight:700">${fmt(p.price||0)}</div> 
+        <div class="p-meta" style="margin-top:2px;display:flex;align-items:center;gap:4px;"> 
+          ${renderStar(avgRating)} 
+          <span style="font-size:11px;color:var(--muted)">(${ratings.length})</span> 
+        </div> 
+        <div class="p-actions" style="margin-top:10px"> 
+          <button class="btn-outline" data-add="${p.id}" onclick="event.stopPropagation();">Keranjang</button> 
+        </div>`; 
+      container.appendChild(el); 
+    }); 
+    container.querySelectorAll('button[data-add]').forEach(b=>b.onclick = (e)=> { e.stopPropagation(); addToCart(b.dataset.add); }); 
+  }
+
+  // --- Product Detail Page (PDP) Logic --- 
+  function showProductDetail(id){ 
+    currentProductId = id; 
+    loadProductDetail(id); 
+    showPage('product-detail'); 
+  } 
+  
+  async function loadProductDetail(id){ 
+    const container = $('#product-detail-content'); 
+    container.innerHTML = 'Memuat...';
+    try{
+        const { data: product, error: prodError } = await sb.from('products')
+            .select('*, product_reviews(*), seller:seller_id(user_metadata->>full_name)')
+            .eq('id', id)
+            .single();
+
+        if (prodError) throw prodError;
+        if (!product) throw new Error('Produk tidak ditemukan');
+
+        const ratings = product.product_reviews?.map(r => r.rating) || [];
+        const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+        
+        const sellerName = product.seller?.full_name || 'Penjual Anonim';
+        const sellerId = product.seller_id; // Simpan ID penjual
+
+        const imageUrl = getProductImageUrl(product.file_url);
+        const fallbackSvg = createFallbackSvg(product.title || '');
+
+        container.innerHTML = `
+          <div class="p-thumb" style="height:180px; margin-bottom:12px">
+             ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHTML(product.title)}" onerror="this.onerror=null; this.src='${fallbackSvg}';"/>` : `<img src="${fallbackSvg}" alt="Fallback"/>`}
+          </div>
+          <h2>${escapeHTML(product.title)}</h2>
+          <div class="small" style="margin-top:-8px; margin-bottom:12px;">Penjual: <strong>${escapeHTML(sellerName)}</strong></div>
+
+          <div class="card" style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+             <div style="flex:1">
+                 <div class="price">${fmt(product.price)}</div>
+                 <div style="font-size:12px; color:var(--muted)">Kategori: ${escapeHTML(product.category)}</div>
+             </div>
+             <div style="text-align:right">
+                 ${renderStar(avgRating)}
+                 <div class="rating-text">${ratings.length} ulasan</div>
+             </div>
+          </div>
+          
+          <div class="card">
+              <h4>Deskripsi</h4>
+              <p class="small" style="white-space:pre-wrap; color:var(--text)">${escapeHTML(product.description || 'Tidak ada deskripsi.')}</p>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:12px">
+            <button id="btn-pd-buy" class="btn" style="flex:2">Beli Sekarang</button>
+            <button id="btn-pd-cart" class="btn-outline" style="flex:1">🛒</button>
+            <button id="btn-pd-chat-seller" class="btn-outline" style="flex:1">💬 Chat</button>
+          </div>
+
+          <div style="margin-top:24px"> 
+            <h4>Ulasan Produk (<span id="pd-review-count">${ratings.length}</span>)</h4> 
+            <div id="review-form-container" class="card" style="margin-bottom:12px"> 
+              <div id="review-form-login-note" class="small ${currentUser ? 'hidden':''}">Login untuk memberikan ulasan.</div> 
+              <div id="review-form-logged-in" class="${currentUser ? '':'hidden'}"> 
+                <div style="font-weight:700;margin-bottom:6px">Beri Penilaianmu:</div> 
+                <div class="star-rating" id="review-rating-input"> 
+                  <input type="radio" id="star5" name="rating" value="5" /><label for="star5">★</label> 
+                  <input type="radio" id="star4" name="rating" value="4" /><label for="star4">★</label> 
+                  <input type="radio" id="star3" name="rating" value="3" /><label for="star3">★</label> 
+                  <input type="radio" id="star2" name="rating" value="2" /><label for="star2">★</label> 
+                  <input type="radio" id="star1" name="rating" value="1" /><label for="star1">★</label> 
+                </div> 
+                <textarea id="review-text" placeholder="Tulis ulasan produk..." rows="3" style="margin-top:8px"></textarea> 
+                <button id="btn-submit-review" class="btn" style="margin-top:8px">Kirim Ulasan</button> 
+                <div id="review-note" class="small muted-note"></div> 
+              </div> 
+            </div> 
+            <div id="product-review-list"></div> 
+          </div> `; 
+
+        renderReviews(product.product_reviews); 
+        $('#btn-pd-buy').onclick = () => alert('Pembayaran belum diimplementasikan (dummy).'); 
+        $('#btn-pd-cart').onclick = () => addToCart(product.id); 
+        document.getElementById('btn-submit-review')?.addEventListener('click', submitReview); 
+        
+        // EVENT LISTENER TOMBOL CHAT BARU
+        $('#btn-pd-chat-seller').onclick = () => {
+            if(!currentUser) return toast('Login untuk chat dengan penjual');
+            if(currentUser.id === sellerId) return toast('Anda tidak dapat chat dengan diri sendiri');
+            // Panggil fungsi chat realtime baru
+            startChatWithUser(sellerId, sellerName);
+        };
+    }catch(err){ 
+        container.innerHTML = `<h2>Gagal Memuat Produk</h2><p>${err.message}</p><button class="btn-outline" onclick="showPage('home')">Kembali</button>`; 
+        console.error('loadProductDetail', err); 
+    } 
+  } 
+
+  async function renderReviews(reviews){ 
+    const listEl = $('#product-review-list'); 
+    listEl.innerHTML = ''; 
+    if (!reviews || reviews.length === 0) { 
+        listEl.innerHTML = '<div class="small">Belum ada ulasan untuk produk ini.</div>'; 
+        return; 
+    } 
+    reviews.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)); 
+
+    reviews.forEach(r=>{ 
+        const reviewerName = 'Pengguna ' + r.user_id.slice(0, 8); 
+        const reviewDate = new Date(r.created_at).toLocaleDateString('id-ID');
+
+        const div = document.createElement('div');
+        div.className='review-list-item';
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-weight:600">${escapeHTML(reviewerName)}</div>
+                <div class="small">${reviewDate}</div>
+            </div>
+            <div style="margin-top:2px; margin-bottom:4px;">${renderStar(r.rating)}</div>
+            <p class="small" style="margin:0">${escapeHTML(r.review_text || 'Tidak ada teks ulasan.')}</p>
+        `;
+        listEl.appendChild(div);
+    });
+  }
+
+  async function submitReview(){ 
+    if(!currentUser || !currentProductId) return toast('Login atau pilih produk dulu'); 
+    const rating = Number(document.querySelector('#review-rating-input input:checked')?.value);
+    const text = $('#review-text').value.trim();
+
+    if(!rating || !text) return $('#review-note').textContent = 'Rating dan ulasan harus diisi.';
+
+    $('#review-note').textContent = 'Mengirim ulasan...';
+    try{
+        const { error } = await sb.from('product_reviews').insert([{ 
+            product_id: currentProductId, 
+            user_id: currentUser.id, 
+            rating, 
+            review_text: text, 
+            created_at: new Date().toISOString() 
+        }]);
+        if(error) throw error;
+        
+        $('#review-note').textContent = 'Ulasan terkirim!';
+        $('#review-text').value = '';
+        document.querySelectorAll('#review-rating-input input:checked').forEach(r => r.checked = false); 
+        
+        loadProductDetail(currentProductId); 
+    }catch(err){ 
+        $('#review-note').textContent = 'Gagal: ' + err.message; 
+        console.error('submitReview', err); 
+    } 
+  } 
+
+  // ---------- CATEGORIES (DIUBAH) ---------- 
+  const DEFAULT_CATEGORIES = [ 
+    { name: "Ebook", icon: "📚" }, 
+    { name: "Template", icon: "🎨" }, 
+    { name: "Musik", icon: "🎵" }, 
+    { name: "Desain", icon: "🖌️" }, 
+    { name: "Video", icon: "🎬" }, 
+    { name: "Plugin", icon: "⚙️" }, 
+    { name: "Script / Code", icon: "💻" }, 
+    { name: "Kursus Online", icon: "🎓" }, 
+    { name: "Aplikasi", icon: "📱" }, 
+    { name: "Font / Typografi", icon: "🔤" }, 
+    { name: "Lainnya", icon: "🗂️" } 
+  ]; 
+  async function loadCategories() { 
+    const container = document.getElementById('categories-list'); 
+    const homeCats = document.getElementById('home-cats'); 
+    if (!homeCats) return; 
+    homeCats.innerHTML = '<div class="small">Memuat...</div>'; 
+    if(container) container.innerHTML = '<div class="small">Memuat kategori...</div>'; 
+    try { 
+      const { data: products, error } = await sb.from('products').select('category'); 
+      if (error) throw error; 
+      const counts = {}; 
+      (products || []).forEach(p => { 
+        const cat = (p.category || 'Lainnya').trim(); 
+        counts[cat] = (counts[cat] || 0) + 1; 
+      }); 
+      const allCats = DEFAULT_CATEGORIES.map(c => ({ ...c, count: counts[c.name] || 0 })); 
+      homeCats.innerHTML = ''; 
+      allCats.slice(0,5).forEach(c=>{ // Hanya 5 di Home
+        const div=document.createElement('div'); 
+        div.className='cat'; 
+        div.innerHTML=`<div style='font-size:24px'>${c.icon}</div><div style='margin-top:2px;font-weight:600'>${escapeHTML(c.name)}</div>`; 
+        div.onclick=()=> filterByCategory(c.name); 
+        homeCats.appendChild(div); 
+      }); 
+      renderCategories(allCats); 
+    } catch (err) { 
+      console.error('loadCategories', err); 
+      if(container) container.innerHTML = '<div class="small">Gagal memuat kategori.</div>'; 
+      homeCats.innerHTML = '<div class="small">Gagal memuat.</div>'; 
+    } 
+  } 
+
+  function renderCategories(list) { 
+    const container = document.getElementById('categories-list'); 
+    if (!container) return; 
+    
+    container.innerHTML = ''; 
+    if (list.length === 0) { 
+      container.innerHTML = '<div class="small">Kategori tidak ditemukan.</div>'; 
+      return; 
+    }
+    list.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'card cat';
+      div.style.textAlign = 'left';
+      div.style.padding = '10px';
+      div.style.boxShadow = 'none';
+      div.style.border = '1px solid rgba(0,0,0,0.06)';
+      div.innerHTML = `<div style='font-size:20px; display:inline-block; margin-right:8px'>${c.icon}</div><div style='font-weight:700; display:inline-block;'>${escapeHTML(c.name)}</div> <div class='small' style='margin-top:4px'>${c.count} produk</div>`;
+      div.onclick = () => filterByCategory(c.name);
+      container.appendChild(div);
+    });
+  } 
+
+  async function filterByCategory(category) {
+    showPage('home');
+    $('#trending-products').innerHTML = ''; 
+    $('#latest-products').innerHTML = `<div class="small">Memuat produk kategori: <strong>${escapeHTML(category)}</strong>...</div>`;
+    
+    try{
+        const { data, error } = await sb.from('products')
+            .select('*, product_reviews(rating)')
+            .eq('category', category)
+            .order('created_at',{ascending:false})
+            .limit(60);
+        if(error) throw error;
+        renderProductsGrid(data||[],'#latest-products');
+    }catch(err){
+        $('#latest-products').innerHTML = '<div class="small">Gagal memuat produk: '+err.message+'</div>';
+        console.error('filterByCategory', err);
+    }
+  }
+  
+  // ---------- FUNGSI CHAT PRIVAT REALTIME BARU ----------
+  
+  async function loadChatListPage() {
+      if (!currentUser) {
+          $('#chat-list-empty').textContent = 'Silakan login untuk melihat percakapan.';
+          return;
+      }
+      
+      const container = $('#chat-list-container');
+      const emptyNote = $('#chat-list-empty');
+      container.innerHTML = ''; // Hapus list lama
+      emptyNote.textContent = 'Memuat percakapan...';
+      emptyNote.style.display = 'block';
+
+      try {
+          // Panggil RPC yang sudah kita buat di Supabase
+          // ***** INI ADALAH BARIS YANG DIPERBAIKI *****
+          const { data, error } = await sb.rpc('get_my_conversations');
+          
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+              emptyNote.textContent = 'Belum ada percakapan. Mulai chat dari halaman produk.';
+              return;
+          }
+          
+          emptyNote.style.display = 'none';
+          
+          data.forEach(convo => {
+              const otherUserName = convo.other_user_name || 'User';
+              const div = document.createElement('div');
+              div.className = 'chat-list-item';
+              div.onclick = () => startChatWithUser(convo.other_user_id, otherUserName);
+              
+              const lastMsg = convo.last_message_text ? escapeHTML(convo.last_message_text) : '...';
+              const lastTime = convo.last_message_at ? new Date(convo.last_message_at).toLocaleDateString('id-ID') : '';
+              
+              div.innerHTML = `
+                  <div class="avatar">${escapeHTML(otherUserName[0].toUpperCase())}</div>
+                  <div class="chat-list-info">
+                      <div class="chat-list-name">${escapeHTML(otherUserName)}</div>
+                      <div class="chat-list-preview">${lastMsg}</div>
+                  </div>
+                  <div class="chat-list-meta">
+                      <div>${lastTime}</div>
+                  </div>
+              `;
+              container.appendChild(div);
+          });
+          
+      } catch (err) {
+          console.error('loadChatListPage', err);
+          emptyNote.textContent = 'Gagal memuat percakapan. Pastikan SQL RPC sudah dijalankan.';
+          toast('Error memuat chat: ' + err.message);
+      }
+  }
+
+  async function startChatWithUser(otherUserId, otherUserName) {
+      if (!currentUser) return toast('Login dulu');
+      
+      console.log(`Membuka chat dengan ${otherUserName} (ID: ${otherUserId})`);
+      $('#chat-detail-header-name').textContent = escapeHTML(otherUserName);
+      $('#chat-detail-avatar').textContent = escapeHTML(otherUserName[0].toUpperCase());
+      $('#chat-bubbles-container').innerHTML = '<div class="small" style="text-align:center">Memuat pesan...</div>';
+      
+      showPage('chat-detail');
+      
+      try {
+          // 1. Panggil RPC untuk mendapatkan ID percakapan
+          const { data: convoId, error: rpcError } = await sb.rpc('get_or_create_conversation', {
+              p_other_user_id: otherUserId
+          });
+          
+          if (rpcError) throw rpcError;
+          
+          currentConversationId = convoId;
+          console.log('Conversation ID:', currentConversationId);
+          
+          // 2. Muat riwayat pesan
+          await loadMessages(currentConversationId);
+          
+          // 3. Subscribe ke pesan baru
+          subscribeToMessages(currentConversationId);
+          
+      } catch (err) {
+          console.error('startChatWithUser', err);
+          $('#chat-bubbles-container').innerHTML = `<div class="small" style="text-align:center">Gagal memulai chat: ${err.message}</div>`;
+          toast('Gagal memulai chat.');
+      }
+  }
+
+  async function loadMessages(convoId) {
+      const container = $('#chat-bubbles-container');
+      container.innerHTML = ''; // Hapus loading
+      
+      try {
+          const { data, error } = await sb.from('messages')
+              .select('*')
+              .eq('conversation_id', convoId)
+              .order('created_at', { ascending: true }); // Ambil dari paling lama
+              
+          if (error) throw error;
+          
+          data.forEach(msg => renderChatMessage(msg, false)); // false = jangan scroll, karena kita render semua
+          
+          // Scroll ke bawah setelah semua pesan dimuat
+          scrollToChatBottom();
+          
+      } catch (err) {
+          console.error('loadMessages', err);
+          container.innerHTML = `<div class="small" style="text-align:center">Gagal memuat riwayat pesan.</div>`;
+      }
+  }
+  
+  function renderChatMessage(msg, autoScroll) {
+      if (!currentUser) return;
+      
+      const container = $('#chat-bubbles-container');
+      const div = document.createElement('div');
+      const isSent = msg.sender_id === currentUser.id;
+      
+      div.className = isSent ? 'chat-message sent' : 'chat-message';
+      div.innerHTML = `<div class="msg-text">${escapeHTML(msg.message_text)}</div>`;
+      
+      container.appendChild(div);
+      
+      if (autoScroll) {
+          scrollToChatBottom();
+      }
+  }
+  
+  function scrollToChatBottom() {
+      const chatBox = $('#chat-detail-box');
+      // Scroll container chat-detail-box, BUKAN chat-bubbles-container
+      chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function unsubscribeFromChat() {
+      if (currentChatSubscription) {
+          console.log('Unsubscribing from chat:', currentConversationId);
+          sb.removeChannel(currentChatSubscription);
+          currentChatSubscription = null;
+          currentConversationId = null;
+      }
+  }
+  
+  function subscribeToMessages(convoId) {
+      // Unsubscribe dari channel lama jika ada
+      unsubscribeFromChat();
+      
+      console.log('Subscribing to channel:', `chat_${convoId}`);
+      currentChatSubscription = sb.channel(`chat_${convoId}`)
+          .on('postgres_changes', { 
+              event: 'INSERT', 
+              schema: 'public', 
+              table: 'messages', 
+              filter: `conversation_id=eq.${convoId}` 
+          }, (payload) => {
+              console.log('Pesan realtime diterima!', payload.new);
+              // Jangan render pesan kita sendiri (sudah di-handle optimistic UI)
+              if (payload.new.sender_id !== currentUser.id) {
+                  renderChatMessage(payload.new, true);
+              }
+          })
+          .subscribe((status, err) => {
+              if (status === 'SUBSCRIBED') {
+                  console.log('✅ Realtime chat connected');
+                  $('#chat-detail-status').textContent = 'Online';
+              } else {
+                  console.error('Chat subscription error', err);
+                  $('#chat-detail-status').textContent = 'Offline';
+              }
+          });
+  }
+  
+  async function sendChatMessage() {
+      const input = $('#chat-detail-input');
+      const messageText = input.value.trim();
+      
+      if (!messageText || !currentUser || !currentConversationId) {
+          return;
+      }
+      
+      const tempMessage = {
+          sender_id: currentUser.id,
+          message_text: messageText,
+          created_at: new Date().toISOString()
+      };
+      
+      // 1. Optimistic UI: Langsung render pesan
+      renderChatMessage(tempMessage, true);
+      input.value = ''; // Kosongkan input
+      
+      try {
+          // 2. Kirim ke database
+          const { error } = await sb.from('messages').insert({
+              conversation_id: currentConversationId,
+              sender_id: currentUser.id,
+              message_text: messageText
+          });
+          
+          if (error) throw error;
+          
+          // Sukses
+          console.log('Pesan terkirim ke DB');
+          
+      } catch (err) {
+          console.error('sendChatMessage', err);
+          toast('Gagal mengirim pesan.');
+          // TODO: Tambahkan logika untuk menandai pesan gagal di UI
+      }
+  }
+
+
+  // ---------- MY SHOP IMPLEMENTATION ----------
+  async function loadMyProducts(){
+    if(!currentUser) return $('#my-products-list').innerHTML = '<div class="small">Silakan login untuk melihat toko Anda.</div>';
+
+    const listEl = $('#my-products-list');
+    listEl.innerHTML = '<div class="small">Memuat produk...</div>';
+    
+    try{
+        const { data: products, error } = await sb.from('products')
+            .select('*') 
+            .eq('seller_id', currentUser.id)
+            .order('created_at', { ascending: false });
+
+        if(error) throw error;
+
+        const totalProducts = (products || []).length;
+        const totalSales = (products || []).reduce((sum, p) => sum + (p.sales_count || 0), 0);
+        const totalViews = (products || []).reduce((sum, p) => sum + (p.view_count || 0), 0); 
+
+        $('#shop-stat-products').textContent = totalProducts;
+        $('#shop-stat-sales').textContent = totalSales;
+        $('#shop-stat-views').textContent = totalViews;
+
+        renderMyProductsGrid(products || []);
+
+    }catch(err){
+        listEl.innerHTML = `<div class="small">Gagal memuat produk: ${err.message}.</div>`;
+        console.error('loadMyProducts', err);
+    }
+  }
+
+  function renderMyProductsGrid(list){
+    const container = $('#my-products-list');
+    container.innerHTML = '';
+    if(!list.length) return container.innerHTML = '<div class="small">Anda belum mengunggah produk apapun.</div>';
+
+    list.forEach(p=>{
+        const imageUrl = getProductImageUrl(p.file_url);
+        const fallbackSvg = createFallbackSvg(p.title || '', 60, 20); 
+        const el = document.createElement('div');
+        el.className = 'my-product-item';
+        el.onclick = ()=> showProductDetail(p.id);
+
+        const sales = p.sales_count || 0;
+        const views = p.view_count || 0; 
+
+        el.innerHTML = `
+            <div class="my-product-thumb">
+                ${imageUrl ? `<img src="${imageUrl}" alt="${escapeHTML(p.title)}" onerror="this.onerror=null; this.src='${fallbackSvg}';"/>` : `<img src="${fallbackSvg}" alt="Fallback"/>`}
+            </div>
+            <div class="my-product-info">
+                <div style="font-weight:700; font-size:15px">${escapeHTML(p.title||'Untitled')}</div>
+                <div class="small" style="color:var(--brand); font-weight:600">${fmt(p.price||0)}</div>
+            </div>
+            <div class="my-product-stats">
+                <div>Terjual: <strong style="color:#059669">${sales}</strong></div>
+                <div>Dilihat: ${views}</div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+  }
+  // ---------- END MY SHOP IMPLEMENTATION ----------
+
+  // ---------- Cart ---------- 
+  async function addToCart(productId){ 
+    if(!currentUser) return alert('Silakan login dulu'); 
+    try{ 
+      const { data: exists } = await sb.from('carts').select('*').eq('owner', currentUser.id).eq('product_id', productId).limit(1); 
+      if(exists && exists.length){ 
+        const rec = exists[0]; 
+        await sb.from('carts').update({ qty: (rec.qty||1)+1 }).eq('id', rec.id); 
+      } else { 
+        await sb.from('carts').insert([{ owner: currentUser.id, product_id: productId, qty:1, created_at: new Date().toISOString() }]); 
+      } 
+      await loadCart(); 
+      toast('Ditambahkan ke keranjang'); 
+    }catch(err){ 
+      alert('Gagal: '+err.message); 
+      console.error('addToCart', err); 
+    } 
+  } 
+  
+  async function loadCart(){ 
+    $('#cart-list').innerHTML = '<div class="small">Memuat cart...</div>'; 
+    try{ 
+      if(!currentUser) return $('#cart-list').innerHTML = '<div class="small">Silakan login untuk melihat keranjang</div>'; 
+      const { data, error } = await sb.from('carts').select('*, products(*)').eq('owner', currentUser.id).order('created_at',{ascending:false}); 
+      if(error) throw error; 
+      renderCart(data||[]); 
+    }catch(err){ 
+      $('#cart-list').innerHTML = '<div class="small">Gagal: '+err.message+'</div>'; 
+      console.error('loadCart', err); 
+    } 
+  } 
+
+  function renderCart(items){ 
+    const container = $('#cart-list'); 
+    container.innerHTML=''; 
+    if(!items.length){ 
+      container.innerHTML='<div class="small">Keranjang kosong</div>'; 
+      $('#cart-count').textContent='0'; 
+      $('#cart-total').textContent='Rp0'; 
+      return; 
+    } 
+    let total=0; 
+    items.forEach(r=>{ 
+      const p = r.products || {}; 
+      const row = document.createElement('div'); 
+      row.className='card'; 
+      row.style.display='flex'; 
+      row.style.justifyContent='space-between'; 
+      row.style.alignItems='center'; 
+      row.innerHTML = `<div><div style='font-weight:700'>${escapeHTML(p.title||'Produk')}</div><div class='small'>${fmt(p.price||0)} • Qty: ${r.qty||1}</div></div><div style='display:flex;flex-direction:column;gap:6px'><button class='btn-outline' data-remove='${r.id}'>Hapus</button><button class='btn' data-buy='${r.product_id}'>Beli</button></div>`; 
+      container.appendChild(row); 
+      total += (p.price||0)*(r.qty||1); 
+    }); 
+    $('#cart-count').textContent = items.length; 
+    $('#cart-total').textContent = fmt(total); 
+    container.querySelectorAll('button[data-remove]').forEach(b=>b.onclick = async ()=>{ 
+      const id = b.dataset.remove; 
+      await sb.from('carts').delete().eq('id', id); 
+      await loadCart(); 
+      toast('Item dihapus'); 
+    }); 
+    container.querySelectorAll('button[data-buy]').forEach(b=>b.onclick = ()=> alert('Pembayaran belum diimplementasikan.')); 
+  } 
+  
+  // ---------- Product Upload ---------- 
+  async function submitProduct(){
+    // 1. Dapatkan data form
+    const form = $('#product-form');
+    const name = $('#product-name').value.trim();
+    const description = $('#product-description').value.trim();
+    const price = $('#product-price').value.trim();
+    const stock = $('#product-stock').value.trim();
+    const category = $('#product-category').value.trim();
+    const imageFile = $('#product-image').files[0];
+    const digitalFile = $('#product-digital-file').files[0];
+    const isDigital = $('#product-is-digital').checked;
+    
+    // Tampilkan loading di awal
+    showLoading(); 
+
+    try {
+        // 2. Validasi input
+        if (!name || !description || !price || !stock || !category || !imageFile || (isDigital && !digitalFile)) {
+            toast('Semua kolom wajib diisi!', 'error');
+            return; // Keluar dari fungsi sebelum lanjut
+        }
+        
+        // 3. Ambil User ID (Wajib untuk RLS)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            toast('Anda harus login untuk mengunggah produk.', 'error');
+            return; // Keluar dari fungsi sebelum lanjut
+        }
+
+        const userId = user.id; // ID Pengguna (UUID)
+        const bucketName = 'products';
+        
+        const imagePath = `${userId}/${Date.now()}_${imageFile.name}`; 
+        let digitalPath = null;
+        let image_url = null;
+
+        // 4. Proses Upload File (Gambar)
+        const { data: imageUploadData, error: imageUploadError } = await supabase.storage
+            .from(bucketName)
+            .upload(imagePath, imageFile, { upsert: true });
+
+        if (imageUploadError) {
+            toast(`Gagal mengunggah gambar: ${imageUploadError.message}. Cek RLS Storage.`, 'error');
+            console.error('Storage Upload Error:', imageUploadError);
+            return; 
+        }
+        image_url = imageUploadData.path;
+
+        // 5. Proses Upload File Digital (jika ada)
+        if (isDigital && digitalFile) {
+            const digitalFilePath = `${userId}/${Date.now()}_${digitalFile.name}_digital`;
+            
+            const { data: digitalUploadData, error: digitalUploadError } = await supabase.storage
+                .from(bucketName)
+                .upload(digitalFilePath, digitalFile, { upsert: true });
+
+            if (digitalUploadError) {
+                toast(`Gagal mengunggah file digital: ${digitalUploadError.message}. Cek RLS Storage.`, 'error');
+                console.error('Digital File Upload Error:', digitalUploadError);
+                return;
+            }
+            digitalPath = digitalUploadData.path;
+        }
+
+        // 6. Siapkan Data untuk Insert ke Tabel 'products'
+        const productData = {
+            user_id: userId, // <-- Wajib ada karena RLS Database memerlukannya
+            name: name,
+            description: description,
+            price: parseFloat(price),
+            stock: parseInt(stock),
+            category: category,
+            is_digital: isDigital,
+            image_url: image_url, 
+            digital_file_url: digitalPath, 
+            status: 'active'
+        }
+
+        // 7. Insert Data Produk ke Tabel 'products'
+        const { data: insertData, error: insertError } = await supabase
+            .from('products')
+            .insert(productData, { returning: 'minimal' });
+
+        if (insertError) {
+            toast(`Gagal menambahkan produk: ${insertError.message}. Cek RLS pada tabel 'products'.`, 'error');
+            console.error('Database Insert Error:', insertError);
+            return;
+        }
+    
+        // 8. Berhasil
+        toast('Produk berhasil ditambahkan!', 'success');
+        form.reset();
+        loadMyProducts();
+        showPage('my-shop');
+
+      } catch (e) {
+        // Tangkap error tak terduga (misalnya error JS murni)
+        console.error('Unexpected error in submitProduct:', e);
+        toast('Terjadi kesalahan tak terduga.', 'error');
+    } finally {
+        // Blok ini JAMINAN akan dieksekusi, baik berhasil maupun gagal.
+        hideLoading(); 
+    }
+  }
+
+  
+
+  // ---------- Withdraw (penarikan) ---------- 
+  async function requestWithdraw(){ 
+    if(!currentUser) return alert('Login dulu'); 
+    const rawAmount = Number($('#withdraw-amount').value) || 0; 
+    if(rawAmount <= 0) return $('#withdraw-note').textContent = 'Masukkan jumlah yang valid.'; 
+    
+    // Ambil data dari form (yang sudah di-readonly)
+    let method = $('#withdraw-method').value; 
+    let dest = $('#withdraw-destination').value; 
+    
+    if(!method || !dest) return $('#withdraw-note').textContent = 'Rekening tujuan belum diatur. Silakan atur di halaman Profil.'; 
+
+    const userBalance = (currentUser.user_metadata || {}).balance || 0;
+    if (rawAmount > userBalance) return $('#withdraw-note').textContent = 'Saldo tidak mencukupi.';
+
+    $('#withdraw-note').textContent = 'Mengirim permintaan...'; 
+    try{ 
+      const payload = { 
+        user_id: currentUser.id, 
+        amount: rawAmount, 
+        method: method, 
+        destination: dest, 
+        status: 'pending', 
+        created_at: new Date().toISOString() 
+      }; 
+      const { data, error } = await sb.from('withdraw_requests').insert([payload]); 
+      if(error) throw error; 
+
+      // OPTIONAL: Kurangi saldo di client-side
+      const newBalance = userBalance - rawAmount;
+      await sb.auth.updateUser({ data: { balance: newBalance } });
+      currentUser.user_metadata.balance = newBalance;
+      renderProfile(); // Update saldo di profil
+      
+      $('#withdraw-note').textContent = 'Permintaan penarikan terkirim. Saldo Anda telah dikurangi.'; 
+      $('#withdraw-amount').value=''; 
+      await loadWithdraws(); 
+      toast('Permintaan penarikan terkirim'); 
+    }catch(err){ 
+      $('#withdraw-note').textContent = 'Gagal mengirim: '+err.message; 
+      console.error('requestWithdraw', err); 
+    } 
+  } 
+
+  async function loadWithdraws(){ 
+    if(!currentUser) return; 
+    $('#withdraw-list').innerHTML = '<div class="small">Memuat riwayat...</div>'; 
+    try{ 
+      const { data, error } = await sb.from('withdraw_requests').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}).limit(50); 
+      if(error) throw error; 
+      if(!data || !data.length) { 
+        $('#withdraw-list').innerHTML = '<div class="small">Belum ada permintaan penarikan.</div>'; 
+        return; 
+      } 
+      $('#withdraw-list').innerHTML = ''; 
+      data.forEach(r=>{ 
+        const div = document.createElement('div'); 
+        div.className='small card'; 
+        div.style.padding = '8px';
+        div.style.boxShadow = 'none';
+        div.style.marginBottom = '6px';
+        div.innerHTML = `<strong>${fmt(r.amount)}</strong> (${r.method}) - Tujuan: ${escapeHTML(r.destination)}<br>Status: <span style="font-weight:700; color:${r.status==='completed'?'#059669':'#f97316'}">${r.status}</span> • ${new Date(r.created_at).toLocaleDateString('id-ID')}`;
+        $('#withdraw-list').appendChild(div);
+      });
+    }catch(err){ 
+        $('#withdraw-list').innerHTML = '<div class="small">Gagal memuat riwayat: '+err.message+'</div>';
+        console.error('loadWithdraws', err);
+    }
+  }
+
+  // ---------- Account Management ----------
+  function populateAccountNames(type){
+    const select = document.getElementById('account-name');
+    select.innerHTML = '';
+    const names = type === 'bank' ? ['BCA', 'Mandiri', 'BRI', 'BNI', 'CIMB Niaga'] : ['GoPay', 'OVO', 'Dana', 'ShopeePay'];
+    names.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; // Simpan nama lengkap
+        opt.textContent = name;
+        select.appendChild(opt);
+    });
+  }
+
+  async function saveAccount(){ 
+    if(!currentUser) return alert('Silakan login dulu'); 
+    const type = document.getElementById('account-type').value; 
+    const name = document.getElementById('account-name').value; 
+    const number = document.getElementById('account-number').value.trim(); 
+    if(!type || !name || !number) return document.getElementById('save-account-note').textContent = 'Semua field harus diisi.';
+    
+    document.getElementById('save-account-note').textContent = 'Menyimpan...'; 
+    try{ 
+        const { data, error } = await sb.auth.updateUser({ 
+            data: { 
+                account_type: type, 
+                account_name: name, // Simpan nama lengkap (e.g., "BCA")
+                account_number: number 
+            }}); 
+        if(error) throw error; 
+        
+        currentUser = data.user || data; 
+        renderProfile(); // Akan otomatis memanggil populateAccountDetails
+        document.getElementById('save-account-note').textContent = 'Rekening tersimpan.'; 
+        toast('Rekening tersimpan'); 
+    }catch(err){ 
+        console.error('saveAccount', err); 
+        document.getElementById('save-account-note').textContent = 'Gagal menyimpan: ' + (err.message || err); 
+    } 
+  } 
+
+  async function clearAccount(){ 
+    if(!currentUser) return alert('Silakan login dulu'); 
+    if(!confirm('Hapus rekening tersimpan?')) return; 
+    try{ 
+        const { data, error } = await sb.auth.updateUser({ 
+            data: { 
+                account_type: null, 
+                account_name: null, 
+                account_number: null 
+            }}); 
+        if(error) throw error; 
+        currentUser = data.user || data; 
+        renderProfile(); 
+        document.getElementById('save-account-note').textContent = 'Rekening dihapus.'; 
+        toast('Rekening dihapus'); 
+    }catch(err){ 
+        console.error('clearAccount', err); 
+        document.getElementById('save-account-note').textContent = 'Gagal: ' + (err.message || err); 
+    } 
+  } 
+
+  // ---------- Events & init ---------- 
+  document.addEventListener('DOMContentLoaded', async ()=>{ 
+    // Auth buttons 
+    $('#btn-show-register').onclick = ()=> showPage('register');
+    $('#btn-show-login').onclick = ()=> showPage('auth');
+    
+    $('#btn-login').onclick = async () => {
+        const email = $('#auth-email').value.trim();
+        const password = $('#auth-pass').value.trim();
+        if (!email || !password) return $('#auth-note').textContent = 'Email dan password wajib diisi.';
+        $('#auth-note').textContent = 'Memproses login...';
+        try {
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            $('#auth-note').textContent = 'Login berhasil 🎉';
+        } catch (err) {
+            $('#auth-note').textContent = 'Gagal login: ' + (err.message || err);
+        }
+    };
+    $('#btn-register').onclick = async () => {
+        const name = $('#reg-name').value.trim();
+        const email = $('#reg-email').value.trim();
+        const password = $('#reg-pass').value.trim();
+        if (!name || !email || !password || password.length < 6) return $('#reg-note').textContent = 'Nama, email, dan password (min 6 karakter) wajib diisi.';
+        $('#reg-note').textContent = 'Memproses pendaftaran...';
+        try {
+            // Beri saldo awal 50000 untuk tes penarikan
+            const { error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name, balance: 0 } } });
+            if (error) throw error;
+            $('#reg-note').textContent = 'Berhasil daftar . Silakan login.';
+            setTimeout(() => showPage('auth'), 1500);
+        } catch (err) {
+            $('#reg-note').textContent = 'Gagal daftar: ' + (err.message || err);
+        }
+    };
+    $('#btn-google').onclick = async () => { 
+      try { 
+        const { error } = await sb.auth.signInWithOAuth({ provider: 'google' }); 
+        if (error) throw error; 
+      } catch (err) { 
+        $('#auth-note').textContent = 'Google login error: ' + (err.message || err); 
+      } 
+    }; 
+    
+    // Notif popup 
+    let notifVisible = false; 
+    $('#btn-wishlist').addEventListener('click', () => { 
+        const popup = $('#notif-popup'); 
+        notifVisible = !notifVisible; 
+        if (notifVisible) { 
+            popup.classList.remove('hidden'); 
+        } else { 
+            popup.classList.add('hidden'); 
+        } 
+    }); 
+    document.addEventListener('click', e => { 
+        const popup = $('#notif-popup'); 
+        const btn = $('#btn-wishlist'); 
+        if(notifVisible && popup && btn && !popup.contains(e.target) && !btn.contains(e.target)){ 
+            popup.classList.add('hidden'); 
+            notifVisible = false; 
+        } 
+    }); 
+    
+    // LOGIKA UBAH FOTO PROFIL 
+    $('#profile-avatar').addEventListener('click', () => { 
+        if (currentUser) { 
+            $('#avatar-upload-input').click(); 
+        } else { 
+            toast('Login untuk mengubah foto profil'); 
+        } 
+    }); 
+    $('#avatar-upload-input').addEventListener('change', uploadAvatar); 
+    
+    // EVENT SALDO & MODAL BARU
+    $('#btn-toggle-balance').addEventListener('click', toggleBalanceVisibility);
+    $('#help-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'help-modal') hideHelpModal(); // Tutup jika klik overlay
+    });
+
+    // Rekening controls 
+    const accTypeEl = document.getElementById('account-type'); 
+    if(accTypeEl) accTypeEl.addEventListener('change', (e)=> populateAccountNames(e.target.value)); 
+    const accNameEl = document.getElementById('account-name'); 
+    if(accTypeEl && !accNameEl.children.length) populateAccountNames(accTypeEl.value || 'bank'); 
+    const saveBtn = document.getElementById('btn-save-account'); 
+    if(saveBtn) saveBtn.addEventListener('click', saveAccount); 
+    const clearBtn = document.getElementById('btn-clear-account'); 
+    if(clearBtn) clearBtn.addEventListener('click', clearAccount); 
+    
+    document.getElementById('year').textContent = new Date().getFullYear(); 
+    
+    // bottom nav click 
+    $$('.nav-item').forEach(n => n.addEventListener('click', () => { 
+        const p = n.dataset.page; 
+        if (p === 'cart') loadCart(); 
+        if (!currentUser && (p === 'profile' || p === 'chat' || p === 'my-shop' || p === 'finance')) { 
+            return showPage('auth'); 
+        } 
+        showPage(p); 
+    })); 
+    
+    // EVENT HALAMAN KEUANGAN
+    $('#btn-tab-withdraw').onclick = () => showFinanceTab('withdraw');
+    $('#btn-tab-affiliate').onclick = () => showFinanceTab('affiliate');
+    $('#btn-copy-aff').onclick = ()=> copyAffiliateLink(); 
+    $('#btn-request-withdraw').onclick = ()=> requestWithdraw(); 
+    $('#btn-load-withdraws').onclick = ()=> { 
+        loadWithdraws(); 
+    }; 
+
+    // Upload Product Button 
+    $('#submit-product').onclick = submitProduct; 
+    // Cart top button 
+    $('#btn-cart-top').onclick = ()=> showPage('cart'); 
+
+    // Search button (product search)
+    // Tombol 'Go' sudah dihapus, jadi event kliknya tidak diperlukan lagi
+    // $('#btn-search-go').onclick = ()=> loadHomeProducts($('#search-input').value.trim()); 
+    $('#search-input').addEventListener('keypress', e => {
+      if(e.key === 'Enter') loadHomeProducts($('#search-input').value.trim());
+    });
+    
+    // EVENT CHAT REALTIME BARU
+    $('#btn-send-chat-detail').onclick = sendChatMessage;
+    $('#chat-detail-input').addEventListener('keypress', e => {
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        sendChatMessage();
+      }
+    });
+    
+    // nav highlight initial 
+    $$('.nav-item').forEach(n => n.classList.remove('active')); 
+    document.querySelector('.nav-item[data-page="home"]').classList.add('active'); 
+
+    // init auth and load data 
+    await initAuth(); 
+    await loadCategories(); 
+
+    // If page loaded with affiliate params, track click 
+    const params = new URLSearchParams(location.search); 
+    const ref = params.get('ref'); 
+    const product = params.get('product'); 
+    if(ref){ trackAffiliateClick(ref, product); }
+  });
+  </script>
+</body>
+</html>
