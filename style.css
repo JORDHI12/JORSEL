@@ -669,3 +669,67 @@ input:focus,textarea:focus,select:focus{border-color:var(--brand)}
 .chat-list-item.swiped {
   transform: translateX(-100px); /* Geser ke kiri 100px */
 }
+/* === SELLER SHOP STYLES === */
+.seller-shop-page {
+    padding: 16px;
+}
+.seller-info {
+    display: flex; 
+    align-items: center; 
+    gap: 16px; 
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--card);
+}
+.seller-avatar {
+    width: 70px;
+    height: 70px;
+    min-width: 70px;
+    border-radius: 50%;
+    overflow:hidden; 
+    background:#f3f4f6;
+}
+.seller-avatar-img { 
+    width:100%; 
+    height:100%; 
+    object-fit:cover; 
+    border-radius: 50%;
+}
+.seller-info-text { flex:1;}
+.seller-name {
+    font-size:19px; 
+    font-weight:700; 
+    color:var(--text); 
+    white-space:nowrap; 
+    overflow:hidden; 
+    text-overflow:ellipsis;
+    line-height: 1.2;
+}
+.seller-followers {
+    font-size:13px; 
+    color:var(--muted); 
+    margin-top:4px;
+}
+.seller-actions {
+    display:flex; 
+    gap:10px; 
+    margin-top:16px;
+}
+.btn-chat-seller {
+    background:var(--brand-dark); 
+    flex:1;
+}
+.btn-follow-seller {
+    border:1px solid var(--brand-light); 
+    color:var(--brand-dark);
+    flex:1;
+}
+.seller-products-section { margin-top:20px;}
+.section-title { font-size:17px;}
+.seller-products-grid {
+    margin-top:12px; 
+    display:grid; 
+    grid-template-columns:repeat(2,1fr); 
+    gap:12px;
+}
+.text-center-muted { text-align:center; color:var(--muted);}
