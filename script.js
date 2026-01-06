@@ -1,7 +1,7 @@
 // ---------- Supabase init (fixed) ----------
 // GANTI INI DENGAN URL & KEY SUPABASE ANDA
-const SUPABASE_URL =                "https://kphzljwphndxezuwdwdz.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwaHpsandwaG5keGV6dXdkd2R6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NjUzNjEsImV4cCI6MjA3ODM0MTM2MX0.kt33VysK_vpSqdsaHLJzz4Uxx247RfAG6zk4ZceQ-pc";
+const SUPABASE_URL =                "https://xxclhiyyckvfpcdgblzg.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4Y2xoaXl5Y2t2ZnBjZGdibHpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1NzkwNDIsImV4cCI6MjA3ODE1NTA0Mn0.K02sDzqVqh0gB3OLf2hJkjDrc2WdLPDJwwjPxkbJtKg";
 
 // use the global 'supabase' script to get createClient
 const { createClient } = supabase;
